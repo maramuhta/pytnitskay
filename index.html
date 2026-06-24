@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Расписание Пятницкая</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 24px; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
+
+.schedule { display: flex; gap: 0; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; background: #fff; }
+
+.time-col { width: 52px; flex-shrink: 0; background: #fafafa; border-right: 1px solid #e8e8e8; }
+.time-header { height: 54px; border-bottom: 1px solid #ddd; }
+.time-axis { position: relative; height: 720px; }
+.tick { position: absolute; right: 4px; font-size: 10px; color: #999; transform: translateY(-50%); white-space: nowrap; }
+
+.day-block { flex: 1; min-width: 0; border-right: 1px solid #ddd; }
+.day-block:last-child { border-right: none; }
+
+.day-header { height: 54px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #5C6937; background: #f0f4e8; border-bottom: 1px solid #ddd; }
+
+.halls { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 54px; display: none; }
+.hall-label { font-size: 9px; text-align: center; padding: 4px 2px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: center; }
+.hall-label.h-big   { background: #EAF3DE; color: #3B6D11; }
+.hall-label.h-mid   { background: #E6F1FB; color: #185FA5; }
+.hall-label.h-small { background: #FAEEDA; color: #854F0B; }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 720px; position: relative; }
+
+.hall-col { position: relative; border-right: 1px solid #f0f0f0; }
+.hall-col:last-child { border-right: none; }
+.hline { position: absolute; left: 0; right: 0; border-top: 1px solid #f0f0f0; pointer-events: none; }
+.hline.bold { border-top-color: #e0e0e0; }
+
+.cls { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 3px 4px; font-size: 9px; line-height: 1.3; overflow: hidden; }
+.cls .ctime { font-size: 8px; opacity: 0.65; }
+.cls .cname { font-weight: 600; font-size: 9px; }
+.cls .tname { font-size: 8px; opacity: 0.8; }
+.cls-big   { background: #C6EFCE; color: #27500A; }
+.cls-mid   { background: #B5D4F4; color: #0C447C; }
+.cls-small { background: #FAC775; color: #633806; }
+.cls-need  { background: #F7C1C1; color: #791F1F; border: 1px dashed #E24B4A; }
+.cls-warn  { background: #FFF2CC; color: #7B5C00; border: 1px dashed #E6AC00; }
+
+.legend { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+.leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+.leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+.hall-strip { height: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #ddd; }
+.hs { font-size: 8px; text-align: center; display: flex; align-items: center; justify-content: center; font-weight: 500; }
+.hs.h-big   { background: #EAF3DE; color: #3B6D11; }
+.hs.h-mid   { background: #E6F1FB; color: #185FA5; }
+.hs.h-small { background: #FAEEDA; color: #854F0B; }
+</style>
+</head>
+<body>
+<h1>Расписание Пятницкая — начальная сетка</h1>
+
+<div class="schedule" id="schedule"></div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#C6EFCE;border:1px solid #639922"></div>Большой зал</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#B5D4F4;border:1px solid #378ADD"></div>Средний зал</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#FAC775;border:1px solid #EF9F27"></div>Малый зал</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#F7C1C1;border:1px dashed #E24B4A"></div>Нужен преподаватель</div>
+</div>
+
+<script>
+const START_H = 6, END_H = 22, TOTAL = (END_H - START_H) * 60, H = 720;
+const toMin = t => { const [h,m] = t.split(':').map(Number); return (h - START_H)*60+(m||0); };
+const toY = t => toMin(t) / TOTAL * H;
+const toHpx = d => d / TOTAL * H;
+
+const sched = {
+  'Пн': {
+    big:   [
+      {t:'6:30', d:150, n:'Барабаш Татьяна', c:'Аштанга. Майсор'},
+      {t:'17:30', d:90, n:'Шалимова Мария', c:'Аштанга. ЛЭД ⚠️ согласовать', warn:true},
+      {t:'19:00', d:90, n:'Васильева Алина', c:'Виньяса'},
+    ],
+    mid: [
+      {t:'9:00', d:90, n:'Атаманова Елена', c:'Силовая Хатха'},
+      {t:'11:00', d:120, n:'Барышников Дима', c:'Аштанга. Дн. майсор'},
+      {t:'14:00', d:105, n:'Рябова Катя', c:'Хатха все уровни + Шавасана ⚠️ согласовать', warn:true},
+      {t:'18:30', d:90, n:'Иванова Марфа', c:'Виньяса'},
+    ],
+    small: [
+      {t:'10:00', d:90, n:'Нехочина Ира', c:'Хатха йога'},
+      {t:'17:00', d:90, n:'Муравьев Денис', c:'Виньяса / Хатха Функц.'},
+    ],
+  },
+  'Вт': {
+    big: [
+      {t:'6:30', d:150, n:'Барабаш Татьяна', c:'Аштанга. Майсор'},
+      {t:'10:00', d:90, n:'Березкина Олеся', c:'Аштанга / Хатха'},
+      {t:'12:00', d:90, n:'Слуцкая Анна', c:'Хатха. Начинающий'},
+      {t:'20:30', d:90, n:'Павлов Юрий', c:'Хатха йога'},
+      {t:'19:00', d:90, n:'Назарова Дарья', c:'Виньяса'},
+    ],
+    mid: [
+      {t:'17:00', d:90, n:'Пичугина Мария', c:'Хатха / Ароматерапия'},
+      {t:'18:30', d:90, n:'Старостина Анастасия', c:'Хатха йога'},
+    ],
+    small: [
+      {t:'19:00', d:90, n:'Селихова Светлана', c:'Хатха / Йогатерапия'},
+    ],
+  },
+  'Ср': {
+    big: [
+      {t:'6:30', d:150, n:'Барабаш Татьяна', c:'Аштанга. Майсор'},
+      {t:'17:30', d:90, n:'Шалимова Мария', c:'Аштанга. ЛЭД ⚠️ согласовать', warn:true},
+    ],
+    mid: [
+      {t:'9:00', d:90, n:'Атаманова Елена', c:'Силовая Хатха'},
+      {t:'11:00', d:120, n:'Барышников Дима', c:'Аштанга. Дн. майсор'},
+      {t:'14:00', d:105, n:'Рябова Катя', c:'Хатха все уровни + Шавасана ⚠️ согласовать', warn:true},
+      {t:'18:30', d:90, n:'Иванова Марфа', c:'Виньяса'},
+    ],
+    small: [
+      {t:'10:00', d:90, n:'Нехочина Ира', c:'Хатха йога'},
+      {t:'17:00', d:90, n:'Муравьев Денис', c:'Виньяса / Хатха Функц.'},
+      {t:'19:00', d:90, n:'Родина Любовь', c:'Виньяса'},
+    ],
+  },
+  'Чт': {
+    big: [
+      {t:'6:30', d:150, n:'Барабаш Татьяна', c:'Аштанга. Майсор'},
+      {t:'10:00', d:90, n:'Березкина Олеся', c:'Аштанга / Хатха'},
+      {t:'12:00', d:90, n:'Слуцкая Анна', c:'Хатха. Начинающий'},
+      {t:'20:30', d:90, n:'Павлов Юрий', c:'Хатха йога'},
+      {t:'19:00', d:90, n:'Назарова Дарья', c:'Виньяса'},
+    ],
+    mid: [
+      {t:'17:00', d:90, n:'Пичугина Мария', c:'Хатха / Ароматерапия'},
+      {t:'18:30', d:90, n:'Старостина Анастасия', c:'Хатха йога'},
+    ],
+    small: [
+      {t:'19:00', d:90, n:'Селихова Светлана', c:'Хатха / Йогатерапия'},
+    ],
+  },
+  'Пт': {
+    big: [
+      {t:'6:30', d:150, n:'Барабаш Татьяна', c:'Аштанга. Майсор'},
+      {t:'17:30', d:90, n:'Шалимова Мария', c:'Аштанга. ЛЭД ⚠️ согласовать', warn:true},
+      {t:'19:00', d:90, n:'Васильева Алина', c:'Виньяса'},
+    ],
+    mid: [
+      {t:'9:00', d:90, n:'Атаманова Елена', c:'Силовая Хатха'},
+      {t:'11:00', d:120, n:'Барышников Дима', c:'Аштанга. Дн. майсор'},
+    ],
+    small: [
+      {t:'19:00', d:90, n:'Родина Любовь', c:'Виньяса'},
+    ],
+  },
+  'Сб': {
+    big: [
+      {t:'10:00', d:90, n:'Атаманова Елена', c:'Силовая Хатха'},
+      {t:'12:00', d:90, n:'Васильева Алина', c:'Виньяса'},
+      {t:'14:00', d:90, n:'Пичугина Мария', c:'Хатха и Ароматерапия'},
+    ],
+    mid: [
+      {t:'9:00', d:90, n:'Барабаш Татьяна', c:'Аштанга. ЛЭД'},
+      {t:'11:00', d:90, n:'Старостина Анастасия', c:'Хатха йога'},
+      {t:'13:00', d:90, n:'Селихова Светлана', c:'Силовая Хатха (прод.)'},
+      {t:'17:30', d:90, n:'Бурцева Элина', c:'Инь йога (уточнить)'},
+    ],
+    small: [
+      {t:'10:00', d:90, n:'Нехочина Ира', c:'Хатха йога'},
+    ],
+  },
+  'Вс': {
+    big: [
+      {t:'12:00', d:90, n:'Родина Любовь', c:'Виньяса'},
+      {t:'16:00', d:90, n:'Васильева Алина', c:'Виньяса'},
+      {t:'18:00', d:90, n:'Щаповалова', c:'Звукотерапия'},
+    ],
+    mid: [
+      {t:'16:30', d:90, n:'Павлов Юрий', c:'Стойки на руках'},
+    ],
+    small: [
+    ],
+  },
+};
+
+const days = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const wrap = document.getElementById('schedule');
+
+// Колонка времени
+const timeColEl = document.createElement('div');
+timeColEl.className = 'time-col';
+const thEl = document.createElement('div');
+thEl.className = 'time-header';
+timeColEl.appendChild(thEl);
+const axEl = document.createElement('div');
+axEl.className = 'time-axis';
+for (let h = START_H; h <= END_H; h++) {
+  const y = (h - START_H) / (END_H - START_H) * H;
+  const t = document.createElement('div');
+  t.className = 'tick';
+  t.style.top = y + 'px';
+  t.textContent = h + ':00';
+  axEl.appendChild(t);
+}
+timeColEl.appendChild(axEl);
+wrap.appendChild(timeColEl);
+
+days.forEach(day => {
+  const data = sched[day];
+  const block = document.createElement('div');
+  block.className = 'day-block';
+
+  const dh = document.createElement('div');
+  dh.className = 'day-header';
+  dh.textContent = day;
+  block.appendChild(dh);
+
+  const strip = document.createElement('div');
+  strip.className = 'hall-strip';
+  ['Б','С','М'].forEach((l,i) => {
+    const s = document.createElement('div');
+    s.className = 'hs ' + ['h-big','h-mid','h-small'][i];
+    s.textContent = l;
+    strip.appendChild(s);
+  });
+  block.appendChild(strip);
+
+  const cols = document.createElement('div');
+  cols.className = 'cols';
+
+  ['big','mid','small'].forEach((key, ki) => {
+    const col = document.createElement('div');
+    col.className = 'hall-col';
+    for (let h = START_H; h <= END_H; h++) {
+      const y = (h - START_H) / (END_H - START_H) * H;
+      const l = document.createElement('div');
+      l.className = 'hline' + (h % 2 === 0 ? ' bold' : '');
+      l.style.top = y + 'px';
+      col.appendChild(l);
+    }
+    (data[key] || []).forEach(item => {
+      const y = toY(item.t);
+      const h = toHpx(item.d);
+      const div = document.createElement('div');
+      div.className = 'cls ' + (item.need ? 'cls-need' : item.warn ? 'cls-warn' : ['cls-big','cls-mid','cls-small'][ki]);
+      div.style.top = (y + 1) + 'px';
+      div.style.height = (h - 2) + 'px';
+      const endMin = toMin(item.t) + item.d;
+      const endH = Math.floor(endMin / 60) + START_H;
+      const endM = endMin % 60;
+      const endStr = endH + ':' + String(endM).padStart(2,'0');
+      div.innerHTML = `<div class="ctime">${item.t}–${endStr}</div><div class="cname">${item.c}</div><div class="tname">${item.n}</div>`;
+      col.appendChild(div);
+    });
+    cols.appendChild(col);
+  });
+
+  block.appendChild(cols);
+  wrap.appendChild(block);
+});
+</script>
+
+<div style="max-width:900px; margin:40px auto 60px; font-family:Arial,sans-serif; color:#333;">
+  <h2 style="font-size:18px; font-weight:700; margin-bottom:16px; border-bottom:2px solid #e0e0e0; padding-bottom:8px;">Кого мы хотим</h2>
+  <table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:40px;">
+    <thead>
+      <tr style="background:#f5f5f5; text-align:left;">
+        <th style="padding:10px 14px; font-weight:600;">Преподаватель</th>
+        <th style="padding:10px 14px; font-weight:600;">Направление</th>
+        <th style="padding:10px 14px; font-weight:600;">Комментарий</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-top:1px solid #e8e8e8;">
+        <td style="padding:10px 14px;">Никитина Женя</td>
+        <td style="padding:10px 14px;">Хатха</td>
+        <td style="padding:10px 14px;">Ждём — будут ли окна</td>
+      </tr>
+      <tr style="border-top:1px solid #e8e8e8; background:#fafafa;">
+        <td style="padding:10px 14px;">Рябова Катя</td>
+        <td style="padding:10px 14px;">Начинающий</td>
+        <td style="padding:10px 14px;">Окно до 16:00 среда или дневные</td>
+      </tr>
+      <tr style="border-top:1px solid #e8e8e8;">
+        <td style="padding:10px 14px;">Гурьянова Александра</td>
+        <td style="padding:10px 14px;">Виньяса</td>
+        <td style="padding:10px 14px;">Среда и пятница вечер; выходные — уточняем</td>
+      </tr>
+      <tr style="border-top:1px solid #e8e8e8; background:#fafafa;">
+        <td style="padding:10px 14px;">Скачев Павел</td>
+        <td style="padding:10px 14px;">Здоровая Спина, Хатха Силовая</td>
+        <td style="padding:10px 14px;"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="font-size:18px; font-weight:700; margin-bottom:16px; border-bottom:2px solid #e0e0e0; padding-bottom:8px;">Ещё преподаватели, кто хочет</h2>
+  <ul style="margin:0 0 32px; padding-left:20px; line-height:2;">
+    <li>Кашанги Мария</li>
+    <li>Десюкевич Валерия</li>
+    <li>Охочинская Наталья</li>
+    <li>Рышков Александр</li>
+    <li>Лисецкая Арина</li>
+    <li>Колбина Настя</li>
+    <li>Куксенко Богдан — Аштанга</li>
+    <li>Илларионова Таня — Йога 23</li>
+    <li>Тертычная Аня — Йога 23</li>
+    <li>Нездольева Маша — Хатха йога</li>
+    <li>Кошкарова Татьяна</li>
+  </ul>
+</div>
+
+</body>
+</html>
