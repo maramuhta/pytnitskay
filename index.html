@@ -65,10 +65,38 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 .hs.h-big   { background: #EAF3DE; color: #3B6D11; }
 .hs.h-mid   { background: #E6F1FB; color: #185FA5; }
 .hs.h-small { background: #FAEEDA; color: #854F0B; }
+
+.cls { cursor: pointer; }
+.cls:hover { filter: brightness(0.93); }
+
+.popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; align-items: center; justify-content: center; }
+.popup-overlay.open { display: flex; }
+.popup { background: #fff; border-radius: 14px; padding: 24px 28px; min-width: 260px; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); position: relative; }
+.popup-close { position: absolute; top: 12px; right: 16px; font-size: 20px; cursor: pointer; color: #999; line-height: 1; border: none; background: none; padding: 0; }
+.popup-close:hover { color: #333; }
+.popup-time { font-size: 13px; color: #999; margin-bottom: 6px; }
+.popup-class { font-size: 17px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; line-height: 1.3; }
+.popup-teacher { font-size: 15px; color: #3a3a3a; margin-bottom: 8px; }
+.popup-hall { font-size: 12px; font-weight: 600; display: inline-block; padding: 3px 10px; border-radius: 20px; }
+.popup-hall.h-big   { background: #EAF3DE; color: #3B6D11; }
+.popup-hall.h-mid   { background: #E6F1FB; color: #185FA5; }
+.popup-hall.h-small { background: #FAEEDA; color: #854F0B; }
+.popup-day { font-size: 12px; color: #aaa; margin-left: 6px; }
 </style>
 </head>
 <body>
 <h1>Расписание Пятницкая — начальная сетка</h1>
+
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup" id="popup">
+    <button class="popup-close" id="popup-close">×</button>
+    <div class="popup-time" id="popup-time"></div>
+    <div class="popup-class" id="popup-class"></div>
+    <div class="popup-teacher" id="popup-teacher"></div>
+    <span class="popup-hall" id="popup-hall"></span>
+    <span class="popup-day" id="popup-day"></span>
+  </div>
+</div>
 
 <div class="schedule" id="schedule"></div>
 
@@ -292,6 +320,18 @@ days.forEach(day => {
       const endM = endMin % 60;
       const endStr = endH + ':' + String(endM).padStart(2,'0');
       div.innerHTML = `<div class="ctime">${item.t}–${endStr}</div><div class="cname">${item.c}</div><div class="tname">${item.n}</div>`;
+      const hallName = key === 'big' ? 'Большой зал' : key === 'mid' ? 'Средний зал' : 'Малый зал';
+      const hallCls = key === 'big' ? 'h-big' : key === 'mid' ? 'h-mid' : 'h-small';
+      div.addEventListener('click', () => {
+        document.getElementById('popup-time').textContent = item.t + '–' + endStr + ' · ' + item.d + ' мин';
+        document.getElementById('popup-class').textContent = item.c || (item.need ? 'Нужен преподаватель' : 'Подумать / позже');
+        document.getElementById('popup-teacher').textContent = item.n;
+        const hallEl = document.getElementById('popup-hall');
+        hallEl.textContent = hallName;
+        hallEl.className = 'popup-hall ' + hallCls;
+        document.getElementById('popup-day').textContent = day;
+        document.getElementById('popup-overlay').classList.add('open');
+      });
       col.appendChild(div);
     });
     cols.appendChild(col);
@@ -299,6 +339,14 @@ days.forEach(day => {
 
   block.appendChild(cols);
   wrap.appendChild(block);
+});
+
+document.getElementById('popup-close').addEventListener('click', () => {
+  document.getElementById('popup-overlay').classList.remove('open');
+});
+document.getElementById('popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('popup-overlay'))
+    document.getElementById('popup-overlay').classList.remove('open');
 });
 </script>
 
