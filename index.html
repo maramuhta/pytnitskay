@@ -8,17 +8,18 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 24px; }
 h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 
-.schedule { display: flex; gap: 0; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; background: #fff; }
+.sch-scroll { overflow-x: auto; }
+.schedule { min-width: 3420px; display: flex; gap: 0; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; background: #fff; }
 
 .time-col { width: 52px; flex-shrink: 0; background: #fafafa; border-right: 1px solid #e8e8e8; }
-.time-header { height: 54px; border-bottom: 1px solid #ddd; }
-.time-axis { position: relative; height: 720px; }
-.tick { position: absolute; right: 4px; font-size: 10px; color: #999; transform: translateY(-50%); white-space: nowrap; }
+.time-header { height: 80px; border-bottom: 1px solid #ddd; }
+.time-axis { position: relative; height: 1344px; }
+.tick { position: absolute; right: 6px; font-size: 12px; color: #999; transform: translateY(-50%); white-space: nowrap; }
 
-.day-block { flex: 1; min-width: 0; border-right: 1px solid #ddd; }
+.day-block { flex: 1; min-width: 480px; border-right: 1px solid #ddd; }
 .day-block:last-child { border-right: none; }
 
-.day-header { height: 54px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #5C6937; background: #f0f4e8; border-bottom: 1px solid #ddd; }
+.day-header { height: 50px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #5C6937; background: #f0f4e8; border-bottom: 1px solid #ddd; }
 
 .halls { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 54px; display: none; }
 .hall-label { font-size: 9px; text-align: center; padding: 4px 2px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: center; }
@@ -26,17 +27,17 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 .hall-label.h-mid   { background: #E6F1FB; color: #185FA5; }
 .hall-label.h-small { background: #FAEEDA; color: #854F0B; }
 
-.cols { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 720px; position: relative; }
+.cols { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 1344px; position: relative; }
 
 .hall-col { position: relative; border-right: 1px solid #f0f0f0; }
 .hall-col:last-child { border-right: none; }
 .hline { position: absolute; left: 0; right: 0; border-top: 1px solid #f0f0f0; pointer-events: none; }
 .hline.bold { border-top-color: #e0e0e0; }
 
-.cls { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 3px 4px; font-size: 11px; line-height: 1.3; overflow: hidden; }
-.cls .ctime { font-size: 10px; opacity: 0.65; }
-.cls .cname { font-weight: 600; font-size: 11px; }
-.cls .tname { font-size: 12px; font-weight: 500; opacity: 0.9; }
+.cls { position: absolute; left: 3px; right: 3px; border-radius: 6px; padding: 5px 7px; font-size: 13px; line-height: 1.28; overflow: hidden; }
+.cls .ctime { font-size: 12px; opacity: 0.65; }
+.cls .cname { font-weight: 700; font-size: 13.5px; }
+.cls .tname { font-size: 13px; font-weight: 500; opacity: 0.9; }
 .cls-need  { background: #F7C1C1; color: #791F1F; border: 1px dashed #E24B4A; }
 .cls-hot   { background: #E5383B; color: #fff; border: 2px solid #A4161A; font-weight: 700; }
 .cls-hot .cname, .cls-hot .tname, .cls-hot .ctime { font-weight: 700; opacity: 1; }
@@ -62,8 +63,8 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
 .leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
-.hall-strip { height: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #ddd; }
-.hs { font-size: 8px; text-align: center; display: flex; align-items: center; justify-content: center; font-weight: 500; }
+.hall-strip { height: 30px; display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #ddd; }
+.hs { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; font-weight: 700 !important; text-align: center; display: flex; align-items: center; justify-content: center; font-weight: 500; }
 .hs.h-big   { background: #EAF3DE; color: #3B6D11; }
 .hs.h-mid   { background: #E6F1FB; color: #185FA5; }
 .hs.h-small { background: #FAEEDA; color: #854F0B; }
@@ -86,7 +87,6 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 </style>
 </head>
 <body>
-<h1>Расписание Пятницкая — начальная сетка</h1>
 
 <div class="popup" id="popup">
   <button class="popup-close" id="popup-close">×</button>
@@ -97,7 +97,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
   <span class="popup-day" id="popup-day"></span>
 </div>
 
-<div class="schedule" id="schedule"></div>
+<div class="sch-scroll"><div class="schedule" id="schedule"></div></div>
 
 <div class="legend">
   <div class="leg-item"><div class="leg-dot" style="background:#DDF2C9;"></div>Хатха. Начинающий</div>
@@ -116,7 +116,7 @@ h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #3a3a3a; }
 </div>
 
 <script>
-const START_H = 6, END_H = 22, TOTAL = (END_H - START_H) * 60, H = 720;
+const START_H = 6, END_H = 22, TOTAL = (END_H - START_H) * 60, H = 1344;
 const toMin = t => { const [h,m] = t.split(':').map(Number); return (h - START_H)*60+(m||0); };
 const toY = t => toMin(t) / TOTAL * H;
 const toHpx = d => d / TOTAL * H;
@@ -289,12 +289,12 @@ days.forEach(day => {
 
   const dh = document.createElement('div');
   dh.className = 'day-header';
-  dh.textContent = day;
+  dh.textContent = {'Пн':'Понедельник','Вт':'Вторник','Ср':'Среда','Чт':'Четверг','Пт':'Пятница','Сб':'Суббота','Вс':'Воскресенье'}[day];
   block.appendChild(dh);
 
   const strip = document.createElement('div');
   strip.className = 'hall-strip';
-  ['Б','С','М'].forEach((l,i) => {
+  ['Вселенная · 36','Венера · 25','Меркурий · 10'].forEach((l,i) => {
     const s = document.createElement('div');
     s.className = 'hs ' + ['h-big','h-mid','h-small'][i];
     s.textContent = l;
@@ -327,7 +327,7 @@ days.forEach(day => {
       const endM = endMin % 60;
       const endStr = endH + ':' + String(endM).padStart(2,'0');
       div.innerHTML = `<div class="ctime">${item.t}–${endStr}</div><div class="cname">${item.c}</div><div class="tname">${item.n}</div>`;
-      const hallName = key === 'big' ? 'Большой зал' : key === 'mid' ? 'Средний зал' : 'Малый зал';
+      const hallName = key === 'big' ? 'Вселенная · 36' : key === 'mid' ? 'Венера · 25' : 'Меркурий · 10';
       const hallCls = key === 'big' ? 'h-big' : key === 'mid' ? 'h-mid' : 'h-small';
       div.addEventListener('click', e => {
         e.stopPropagation();
